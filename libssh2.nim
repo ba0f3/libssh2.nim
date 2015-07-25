@@ -283,7 +283,7 @@ proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
 
 proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: Time): Channel {.ssh2.}
 
-proc session_abstract*() {.ssh2.}
+proc session_abstract*(s: Session): ptr Session {.ssh2.}
 
 proc session_banner_get*() {.ssh2.}
 
