@@ -16,6 +16,15 @@ type
   Session* = ptr SSH2Struct
   Channel* = ptr SSH2Struct
   Listener* = ptr SSH2Struct
+  KnownHosts* = ptr SSH2Struct
+
+  knownhost_st* {.final, pure.} = object
+    magic*: cint
+    node*: ptr int
+    name: cstring
+    key: cstring
+    typemask: cint
+
 
 const
   LIBSSH2_HOSTKEY_HASH_MD5* = 1
@@ -196,33 +205,33 @@ proc hostkey_hash*(s: Session, hashType: int): cstring {.ssh2.}
 
 proc init*(flags: int): int {.ssh2.}
 
-proc keepalive_config*() {.ssh2.}
+proc keepalive_config*(s: Session, waitReply: int, interval: uint) {.ssh2.}
 
-proc keepalive_send*() {.ssh2.}
+proc keepalive_send*(s: Session, secondsToNext: int): int {.ssh2.}
 
-proc knownhost_add*() {.ssh2.}
+proc knownhost_add*(h: KnownHosts, host, salt, key: cstring, keyLen: int, typeMask: int, kh: knownhost_st): int {.ssh2.}
 
-proc knownhost_addc*() {.ssh2.}
+proc knownhost_addc*(h: KnownHosts, host, salt, key: cstring, keyLen: int, comment: cstring, commentLen, typemask: int, kh: knownhost_st): int {.ssh2.}
 
-proc knownhost_check*() {.ssh2.}
+proc knownhost_check*(h: KnownHosts, host, key: cstring, keyLen, typeMask, int, kh: knownhost_st): int {.ssh2.}
 
-proc knownhost_checkp*() {.ssh2.}
+proc knownhost_checkp*(h: KnownHosts, host: cstring, port: int, key: cstring, keyLen, typeMask: int, kh: knownhost_st): int {.ssh2.}
 
-proc knownhost_del*() {.ssh2.}
+proc knownhost_del*(h: KnownHosts, kh: knownhost_st): int {.ssh2.}
 
-proc knownhost_free*() {.ssh2.}
+proc knownhost_free*(h: KnownHosts) {.ssh2.}
 
-proc knownhost_get*() {.ssh2.}
+proc knownhost_get*(h: KnownHosts, store: var knownhost_st, prev: knownhost_st) {.ssh2.}
 
-proc knownhost_init*() {.ssh2.}
+proc knownhost_init*(s: Session): KnownHosts {.ssh2.}
 
-proc knownhost_readfile*() {.ssh2.}
+proc knownhost_readfile*(h: KnownHosts, filename: cstring, typ: int): int {.ssh2.}
 
-proc knownhost_readline*() {.ssh2.}
+proc knownhost_readline*(h: KnownHosts, line: cstring, lineLen, typ, int): int {.ssh2.}
 
-proc knownhost_writefile*() {.ssh2.}
+proc knownhost_writefile*(h: KnownHosts, filename: cstring, typ: int) {.ssh2.}
 
-proc knownhost_writeline*() {.ssh2.}
+proc knownhost_writeline*(h: KnownHosts, known: knownhost_st, buf: cstring, bufLen, outLen, typ: int) {.ssh2.}
 
 proc poll*() {.ssh2.}
 
