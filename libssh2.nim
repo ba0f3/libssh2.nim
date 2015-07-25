@@ -11,6 +11,14 @@ elif defined(macosx):
 elif defined(unix):
   const
     libname = "libssh2.so"
+
+{.pragma: ssh2,
+  cdecl,
+  dynlib: libname,
+  importc: "libssh2_$1"
+.}
+
+
 type
   SSH2Struct {.final, pure.} = object
   Agent* = ptr SSH2Struct
@@ -51,28 +59,224 @@ type
 
 
 const
-  LIBSSH2_HOSTKEY_HASH_MD5* = 1
-  LIBSSH2_HOSTKEY_HASH_SHA1* = 2
-
-  SSH_EXTENDED_DATA_STDERR* = 1
-
-  # Channel API
-  LIBSSH2_CHANNEL_WINDOW_DEFAULT* = (2*1024*1024)
-  LIBSSH2_CHANNEL_PACKET_DEFAULT* = 32768
-  LIBSSH2_CHANNEL_MINADJUST* = 1024
-
-  # Extended Data Handling
-  LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL* = 0
-  LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE* = 1
-  LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE* = 2
-
-  # Defaults for pty requests
+  LIBSSH2_INVALID_SOCKET* = -1
+  LIBSSH2_DH_GEX_MINGROUP* = 1024
+  LIBSSH2_DH_GEX_OPTGROUP* = 1536
+  LIBSSH2_DH_GEX_MAXGROUP* = 2048
   LIBSSH2_TERM_WIDTH* = 80
   LIBSSH2_TERM_HEIGHT* = 24
   LIBSSH2_TERM_WIDTH_PX* = 0
   LIBSSH2_TERM_HEIGHT_PX* = 0
+  LIBSSH2_SOCKET_POLL_UDELAY* = 250000
+  LIBSSH2_SOCKET_POLL_MAXLOOPS* = 120
+  LIBSSH2_PACKET_MAXCOMP* = 32000
+  LIBSSH2_PACKET_MAXDECOMP* = 40000
+  LIBSSH2_PACKET_MAXPAYLOAD* = 40000
+  LIBSSH2_CALLBACK_IGNORE* = 0
+  LIBSSH2_CALLBACK_DEBUG* = 1
+  LIBSSH2_CALLBACK_DISCONNECT* = 2
+  LIBSSH2_CALLBACK_MACERROR* = 3
+  LIBSSH2_CALLBACK_X11* = 4
+  LIBSSH2_CALLBACK_SEND* = 5
+  LIBSSH2_CALLBACK_RECV* = 6
+  LIBSSH2_METHOD_KEX* = 0
+  LIBSSH2_METHOD_HOSTKEY* = 1
+  LIBSSH2_METHOD_CRYPT_CS* = 2
+  LIBSSH2_METHOD_CRYPT_SC* = 3
+  LIBSSH2_METHOD_MAC_CS* = 4
+  LIBSSH2_METHOD_MAC_SC* = 5
+  LIBSSH2_METHOD_COMP_CS* = 6
+  LIBSSH2_METHOD_COMP_SC* = 7
+  LIBSSH2_METHOD_LANG_CS* = 8
+  LIBSSH2_METHOD_LANG_SC* = 9
+  LIBSSH2_FLAG_SIGPIPE* = 1
+  LIBSSH2_FLAG_COMPRESS* = 2
+  LIBSSH2_POLLFD_SOCKET* = 1
+  LIBSSH2_POLLFD_CHANNEL* = 2
+  LIBSSH2_POLLFD_LISTENER* = 3
+  LIBSSH2_POLLFD_POLLIN* = 0x0001
+  LIBSSH2_POLLFD_POLLPRI* = 0x0002
+  LIBSSH2_POLLFD_POLLEXT* = 0x0002
+  LIBSSH2_POLLFD_POLLOUT* = 0x0004
+  LIBSSH2_POLLFD_POLLERR* = 0x0008
+  LIBSSH2_POLLFD_POLLHUP* = 0x0010
+  LIBSSH2_POLLFD_SESSION_CLOSED* = 0x0010
+  LIBSSH2_POLLFD_POLLNVAL* = 0x0020
+  LIBSSH2_POLLFD_POLLEX* = 0x0040
+  LIBSSH2_POLLFD_CHANNEL_CLOSED* = 0x0080
+  LIBSSH2_POLLFD_LISTENER_CLOSED* = 0x0080
+  LIBSSH2_SESSION_BLOCK_INBOUND* = 0x0001
+  LIBSSH2_SESSION_BLOCK_OUTBOUND* = 0x0002
+  LIBSSH2_HOSTKEY_HASH_MD5* = 1
+  LIBSSH2_HOSTKEY_HASH_SHA1* = 2
+  LIBSSH2_HOSTKEY_TYPE_UNKNOWN* = 0
+  LIBSSH2_HOSTKEY_TYPE_RSA* = 1
+  LIBSSH2_HOSTKEY_TYPE_DSS* = 2
+  LIBSSH2_ERROR_NONE* = 0
+  LIBSSH2_ERROR_SOCKET_NONE* = -1
+  LIBSSH2_ERROR_BANNER_RECV* = -2
+  LIBSSH2_ERROR_BANNER_SEND* = -3
+  LIBSSH2_ERROR_INVALID_MAC* = -4
+  LIBSSH2_ERROR_KEX_FAILURE* = -5
+  LIBSSH2_ERROR_ALLOC* = -6
+  LIBSSH2_ERROR_SOCKET_SEND* = -7
+  LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE* = -8
+  LIBSSH2_ERROR_TIMEOUT* = -9
+  LIBSSH2_ERROR_HOSTKEY_INIT* = -10
+  LIBSSH2_ERROR_HOSTKEY_SIGN* = -11
+  LIBSSH2_ERROR_DECRYPT* = -12
+  LIBSSH2_ERROR_SOCKET_DISCONNECT* = -13
+  LIBSSH2_ERROR_PROTO* = -14
+  LIBSSH2_ERROR_PASSWORD_EXPIRED* = -15
+  LIBSSH2_ERROR_FILE* = -16
+  LIBSSH2_ERROR_METHOD_NONE* = -17
+  LIBSSH2_ERROR_AUTHENTICATION_FAILED* = -18
+  LIBSSH2_ERROR_PUBLICKEY_UNRECOGNIZED* = LIBSSH2_ERROR_AUTHENTICATION_FAILED
+  LIBSSH2_ERROR_PUBLICKEY_UNVERIFIED* = -19
+  LIBSSH2_ERROR_CHANNEL_OUTOFORDER* = -20
+  LIBSSH2_ERROR_CHANNEL_FAILURE* = -21
+  LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED* = -22
+  LIBSSH2_ERROR_CHANNEL_UNKNOWN* = -23
+  LIBSSH2_ERROR_CHANNEL_WINDOW_EXCEEDED* = -24
+  LIBSSH2_ERROR_CHANNEL_PACKET_EXCEEDED* = -25
+  LIBSSH2_ERROR_CHANNEL_CLOSED* = -26
+  LIBSSH2_ERROR_CHANNEL_EOF_SENT* = -27
+  LIBSSH2_ERROR_SCP_PROTOCOL* = -28
+  LIBSSH2_ERROR_ZLIB* = -29
+  LIBSSH2_ERROR_SOCKET_TIMEOUT* = -30
+  LIBSSH2_ERROR_SFTP_PROTOCOL* = -31
+  LIBSSH2_ERROR_REQUEST_DENIED* = -32
+  LIBSSH2_ERROR_METHOD_NOT_SUPPORTED* = -33
+  LIBSSH2_ERROR_INVAL* = -34
+  LIBSSH2_ERROR_INVALID_POLL_TYPE* = -35
+  LIBSSH2_ERROR_PUBLICKEY_PROTOCOL* = -36
+  LIBSSH2_ERROR_EAGAIN* = -37
+  LIBSSH2_ERROR_BUFFER_TOO_SMALL* = -38
+  LIBSSH2_ERROR_BAD_USE* = -39
+  LIBSSH2_ERROR_COMPRESS* = -40
+  LIBSSH2_ERROR_OUT_OF_BOUNDARY* = -41
+  LIBSSH2_ERROR_AGENT_PROTOCOL* = -42
+  LIBSSH2_ERROR_SOCKET_RECV* = -43
+  LIBSSH2_ERROR_ENCRYPT* = -44
+  LIBSSH2_ERROR_BAD_SOCKET* = -45
+  LIBSSH2_ERROR_KNOWN_HOSTS* = -46
+  LIBSSH2_ERROR_BANNER_NONE* = LIBSSH2_ERROR_BANNER_RECV
+  LIBSSH2_INIT_NO_CRYPTO* = 0x0001
+  LIBSSH2_CHANNEL_WINDOW_DEFAULT* = (2*1024*1024)
+  LIBSSH2_CHANNEL_PACKET_DEFAULT* = 32768
+  LIBSSH2_CHANNEL_MINADJUST* = 1024
+  LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL* = 0
+  LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE* = 1
+  LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE* = 2
+  LIBSSH2CHANNEL_EAGAIN* = LIBSSH2_ERROR_EAGAIN
+  LIBSSH2_CHANNEL_FLUSH_EXTENDED_DATA* = -1
+  LIBSSH2_CHANNEL_FLUSH_ALL* = -2
+  LIBSSH2_KNOWNHOST_TYPE_MASK* = 0xffff
+  LIBSSH2_KNOWNHOST_TYPE_PLAIN* = 1
+  LIBSSH2_KNOWNHOST_TYPE_SHA1* = 2
+  LIBSSH2_KNOWNHOST_TYPE_CUSTOM* = 3
+  LIBSSH2_KNOWNHOST_KEYENC_MASK* = (3 shl 16)
+  LIBSSH2_KNOWNHOST_KEYENC_RAW* = (1 shl 16)
+  LIBSSH2_KNOWNHOST_KEYENC_BASE64* = (2 shl 16)
+  LIBSSH2_KNOWNHOST_KEY_MASK* = (7 shl 18)
+  LIBSSH2_KNOWNHOST_KEY_SHIFT* = 18
+  LIBSSH2_KNOWNHOST_KEY_RSA1* = (1 shl 18)
+  LIBSSH2_KNOWNHOST_KEY_SSHRSA* = (2 shl 18)
+  LIBSSH2_KNOWNHOST_KEY_SSHDSS* = (3 shl 18)
+  LIBSSH2_KNOWNHOST_KEY_UNKNOWN* = (7 shl 18)
+  LIBSSH2_KNOWNHOST_CHECK_MATCH* = 0
+  LIBSSH2_KNOWNHOST_CHECK_MISMATCH* = 1
+  LIBSSH2_KNOWNHOST_CHECK_NOTFOUND* = 2
+  LIBSSH2_KNOWNHOST_CHECK_FAILURE* = 3
+  LIBSSH2_KNOWNHOST_FILE_OPENSSH* = 1
+  LIBSSH2_TRACE_TRANS* = (1 shl 1)
+  LIBSSH2_TRACE_KEX* = (1 shl 2)
+  LIBSSH2_TRACE_AUTH* = (1 shl 3)
+  LIBSSH2_TRACE_CONN* = (1 shl 4)
+  LIBSSH2_TRACE_SCP* = (1 shl 5)
+  LIBSSH2_TRACE_SFTP* = (1 shl 6)
+  LIBSSH2_TRACE_ERROR* = (1 shl 7)
+  LIBSSH2_TRACE_PUBLICKEY* = (1 shl 8)
+  LIBSSH2_TRACE_SOCKET* = (1 shl 9)
+  LIBSSH2_SFTP_OPENFILE* = 0
+  LIBSSH2_SFTP_OPENDIR* = 1
+  LIBSSH2_SFTP_RENAME_OVERWRITE* = 0x00000001
+  LIBSSH2_SFTP_RENAME_ATOMIC* = 0x00000002
+  LIBSSH2_SFTP_RENAME_NATIVE* = 0x00000004
+  LIBSSH2_SFTP_STAT* = 0
+  LIBSSH2_SFTP_LSTAT* = 1
+  LIBSSH2_SFTP_SETSTAT* = 2
+  LIBSSH2_SFTP_SYMLINK* = 0
+  LIBSSH2_SFTP_READLINK* = 1
+  LIBSSH2_SFTP_REALPATH* = 2
+  LIBSSH2_SFTP_ATTR_SIZE* = 0x00000001
+  LIBSSH2_SFTP_ATTR_UIDGID* = 0x00000002
+  LIBSSH2_SFTP_ATTR_PERMISSIONS* = 0x00000004
+  LIBSSH2_SFTP_ATTR_ACMODTIME* = 0x00000008
+  LIBSSH2_SFTP_ATTR_EXTENDED* = 0x80000000
+  LIBSSH2_SFTP_ST_RDONLY* = 0x00000001
+  LIBSSH2_SFTP_ST_NOSUID* = 0x00000002
+  LIBSSH2_SFTP_TYPE_REGULAR* = 1
+  LIBSSH2_SFTP_TYPE_DIRECTORY* = 2
+  LIBSSH2_SFTP_TYPE_SYMLINK* = 3
+  LIBSSH2_SFTP_TYPE_SPECIAL* = 4
+  LIBSSH2_SFTP_TYPE_UNKNOWN* = 5
+  LIBSSH2_SFTP_TYPE_SOCKET* = 6
+  LIBSSH2_SFTP_TYPE_CHAR_DEVICE* = 7
+  LIBSSH2_SFTP_TYPE_BLOCK_DEVICE* = 8
+  LIBSSH2_SFTP_TYPE_FIFO* = 9
+  LIBSSH2_SFTP_S_IFMT* = 0170000
+  LIBSSH2_SFTP_S_IFIFO* = 0010000
+  LIBSSH2_SFTP_S_IFCHR* = 0020000
+  LIBSSH2_SFTP_S_IFDIR* = 0040000
+  LIBSSH2_SFTP_S_IFBLK* = 0060000
+  LIBSSH2_SFTP_S_IFREG* = 0100000
+  LIBSSH2_SFTP_S_IFLNK* = 0120000
+  LIBSSH2_SFTP_S_IFSOCK* = 0140000
+  LIBSSH2_SFTP_S_IRWXU* = 0000700
+  LIBSSH2_SFTP_S_IRUSR* = 0000400
+  LIBSSH2_SFTP_S_IWUSR* = 0000200
+  LIBSSH2_SFTP_S_IXUSR* = 0000100
+  LIBSSH2_SFTP_S_IRWXG* = 0000070
+  LIBSSH2_SFTP_S_IRGRP* = 0000040
+  LIBSSH2_SFTP_S_IWGRP* = 0000020
+  LIBSSH2_SFTP_S_IXGRP* = 0000010
+  LIBSSH2_SFTP_S_IRWXO* = 0000007
+  LIBSSH2_SFTP_S_IROTH* = 0000004
+  LIBSSH2_SFTP_S_IWOTH* = 0000002
+  LIBSSH2_SFTP_S_IXOTH* = 0000001
+  LIBSSH2_FXF_READ* = 0x00000001
+  LIBSSH2_FXF_WRITE* = 0x00000002
+  LIBSSH2_FXF_APPEND* = 0x00000004
+  LIBSSH2_FXF_CREAT* = 0x00000008
+  LIBSSH2_FXF_TRUNC* = 0x00000010
+  LIBSSH2_FXF_EXCL* = 0x00000020
+  LIBSSH2_FX_OK* = 0
+  LIBSSH2_FX_EOF* = 1
+  LIBSSH2_FX_NO_SUCH_FILE* = 2
+  LIBSSH2_FX_PERMISSION_DENIED* = 3
+  LIBSSH2_FX_FAILURE* = 4
+  LIBSSH2_FX_BAD_MESSAGE* = 5
+  LIBSSH2_FX_NO_CONNECTION* = 6
+  LIBSSH2_FX_CONNECTION_LOST* = 7
+  LIBSSH2_FX_OP_UNSUPPORTED* = 8
+  LIBSSH2_FX_INVALID_HANDLE* = 9
+  LIBSSH2_FX_NO_SUCH_PATH* = 10
+  LIBSSH2_FX_FILE_ALREADY_EXISTS* = 11
+  LIBSSH2_FX_WRITE_PROTECT* = 12
+  LIBSSH2_FX_NO_MEDIA* = 13
+  LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM* = 14
+  LIBSSH2_FX_QUOTA_EXCEEDED* = 15
+  LIBSSH2_FX_UNKNOWN_PRINCIPLE* = 16
+  LIBSSH2_FX_UNKNOWN_PRINCIPAL* = 16
+  LIBSSH2_FX_LOCK_CONFlICT* = 17
+  LIBSSH2_FX_DIR_NOT_EMPTY* = 18
+  LIBSSH2_FX_NOT_A_DIRECTORY* = 19
+  LIBSSH2_FX_INVALID_FILENAME* = 20
+  LIBSSH2_FX_LINK_LOOP* = 21
+  LIBSSH2SFTP_EAGAIN* = LIBSSH2_ERROR_EAGAIN
 
-  # Disconnect Codes (defined by SSH protocol)
+
   SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT* = 1
   SSH_DISCONNECT_PROTOCOL_ERROR* = 2
   SSH_DISCONNECT_KEY_EXCHANGE_FAILED* = 3
@@ -88,13 +292,7 @@ const
   SSH_DISCONNECT_AUTH_CANCELLED_BY_USER* = 13
   SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE* = 14
   SSH_DISCONNECT_ILLEGAL_USER_NAME* = 15
-
-{.pragma: ssh2,
-  cdecl,
-  dynlib: libname,
-  importc: "libssh2_$1"
-.}
-
+  SSH_EXTENDED_DATA_STDERR* = 1
 
 proc agent_connect*(a: Agent): int {.ssh2.}
   ## Connect to an ssh-agent running on the system.
@@ -296,7 +494,7 @@ proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): int {.i
 
 proc publickey_shutdown*(p: PublicKey): int {.ssh2.}
 
-proc scp_recv*(s: Session, path: cstring, sb: TStat) {.ssh2.}
+proc scp_recv*(s: Session, path: cstring, sb: Stat) {.ssh2.}
 
 proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int64): Channel {.ssh2.}
 
@@ -412,7 +610,7 @@ proc sftp_realpath*(h: Sftp, path: cstring, target: pointer, maxLen: uint): int 
 proc sftp_rename_ex*(s: Sftp, source: cstring, sourceLen: uint, dest: cstring, destLen: uint, flags: int64): int {.ssh2.}
 
 proc sftp_rename*(s: Sftp, source, dest: cstring): int {.inline.} =
-  s.sftp_rename_ex(source, source.len.uint, dest, dest.len.uint,  LIBSSH2_SFTP_RENAME_OVERWRITE or LIBSSH2_SFTP_RENAME_ATOMIC o LIBSSH2_SFTP_RENAME_NATIVE)
+  s.sftp_rename_ex(source, source.len.uint, dest, dest.len.uint,  LIBSSH2_SFTP_RENAME_OVERWRITE or LIBSSH2_SFTP_RENAME_ATOMIC or LIBSSH2_SFTP_RENAME_NATIVE)
 
 proc sftp_rmdir_ex*(s: Sftp, path: cstring, pathLen: uint): int {.ssh2.}
 
@@ -454,23 +652,37 @@ proc sftp_unlink*(s: Sftp, filename: cstring): int {.inline.} =
 
 proc sftp_write*(h: SftpHandle, buf: pointer, count: int): int {.ssh2.}
 
-proc trace*() {.ssh2.}
+proc trace*(s: Session, bitMask: int) {.ssh2.}
 
-proc trace_sethandler*() {.ssh2.}
+proc trace_sethandler*(s: Session, context: pointer, callback: pointer) {.ssh2.}
 
-proc userauth_authenticated*() {.ssh2.}
+proc userauth_authenticated*(s: Session): int {.ssh2.}
 
-proc userauth_hostbased_fromfile_ex*() {.ssh2.}
+proc userauth_hostbased_fromfile_ex*(s: Session, uname: cstring, unameLen: uint, pk, pv, pp, hname: cstring, hNameLen: uint, localUame: cstring, localUnameLen: uint): int {.ssh2.}
 
-proc userauth_keyboard_interactive_ex*() {.ssh2.}
+proc userauth_hostbased_fromfile*(s: Session, uname: cstring, unameLen: uint, pk, pv, pp, hostname: cstring): int {.inline.} =
+  userauth_hostbased_fromfile_ex(s, uname, uname.len.uint, pk, pv, pp, hostname, hostname.len.uint, uname, uname.len.uint)
+
+proc userauth_keyboard_interactive_ex*(s: Session, uname: cstring, unameLen: uint, cb: proc): int {.ssh2.}
+
+proc userauth_keyboard_interactive_ex*(s: Session, uname: cstring, cb: proc): int {.inline.} =
+  userauth_keyboard_interactive_ex(s, uname, uname.len.uint, cb)
 
 proc userauth_list*(s: Session, username: cstring, usernameLen: int): cstring {.ssh2.}
 
-proc userauth_password_ex*() {.ssh2.}
+proc userauth_password_ex*(s: Session, uname: cstring, unameLen: uint, password: cstring, passwordLen: uint, cb: proc): int {.ssh2.}
 
-proc userauth_publickey*() {.ssh2.}
+proc userauth_password*(s: Session, uname: cstring, password: cstring, cb: proc): int {.inline.} =
+  userauth_password_ex(s, uname, uname.len.uint, password, password.len.uint, cb)
 
-proc userauth_publickey_fromfile_ex*() {.ssh2.}
+proc userauth_publickey*(s: Session, user: cstring, pkdata: cstring, pubkeydataLen: int, cb: proc) {.ssh2.}
+
+proc userauth_publickey_fromfile_ex*(s: Session, uname: ptr, unameLen: uint, pk, pv, pp: cstring): int {.ssh2.}
+
+proc userauth_publickey_fromfile*(s: Session, uname: ptr cstring, pk, pv, pp: cstring): int {.inline.} =
+  userauth_publickey_fromfile_ex(s, uname, uname[].len.uint, pk, pv, pp)
+
+proc userauth_publickey_frommemory*(s: Session, uname: cstring, unameLen: int, pk: cstring, pkLen: int, pv: cstring, pvLen: int, pp: cstring, ppLen: int): int {.ssh2.}
 
 proc version*(version: int): cstring {.ssh2.}
 
