@@ -22,6 +22,11 @@ type
   PollFd* = ptr SSH2Struct
   PublicKey* = ptr SSH2Struct
 
+  Sftp* = ptr SSH2Struct
+  SftpHandle* = ptr SSH2Struct
+  SftpAttributes* = ptr SSH2Struct
+  SftpStatVFS* = ptr SSH2Struct
+
   knownhost_st* {.final, pure.} = object
     magic*: cint
     node*: ptr int
@@ -348,49 +353,106 @@ proc session_startup*(s: Session, socket: int): int {.ssh2.}
 
 proc session_supported_algs*(s: Session, methodType: int, algs: var cstring) {.ssh2.}
 
-proc sftp_close_handle*() {.ssh2.}
+proc sftp_close_handle*(h: SftpHandle): int {.ssh2.}
 
-proc sftp_fstat_ex*() {.ssh2.}
+proc sftp_close*(h: SftpHandle): int {.inline.} =
+  h.sftp_close_handle()
 
-proc sftp_fstatvfs*() {.ssh2.}
+proc sftp_closedir*(h: SftpHandle): int {.inline.} =
+  h.sftp_close_handle()
 
-proc sftp_get_channel*() {.ssh2.}
+proc sftp_fstat_ex*(h: SftpHandle, attrs: SftpAttributes, setstat: int): int {.ssh2.}
 
-proc sftp_init*() {.ssh2.}
+proc sftp_fstat*(h: SftpHandle, attrs: SftpAttributes): int {.inline.} =
+  h.sftp_fstat_ex(attrs, 0)
 
-proc sftp_last_error*() {.ssh2.}
+proc sftp_fsetstat*(h: SftpHandle, attrs: SftpAttributes): int {.inline.} =
+  h.sftp_fstat_ex(attrs, 1)
 
-proc sftp_mkdir_ex*() {.ssh2.}
+proc sftp_fstatvfs*(h: SftpHandle, path: cstring, pathLen: int, st: SftpStatVFS) {.ssh2.}
 
-proc sftp_open_ex*() {.ssh2.}
+proc sftp_fsync*(h: SftpHandle): int {.ssh2.}
 
-proc sftp_read*() {.ssh2.}
+proc sftp_get_channel*(s: Sftp): Channel {.ssh2.}
 
-proc sftp_readdir_ex*() {.ssh2.}
+proc sftp_init*(s: Session): Sftp {.ssh2.}
 
-proc sftp_rename_ex*() {.ssh2.}
+proc sftp_last_error*(s: Sftp): uint64 {.ssh2.}
 
-proc sftp_rmdir_ex*() {.ssh2.}
+proc sftp_lstat(s: Sftp, path: cstring, attrs: SftpAttributes): int {.ssh2.}
 
-proc sftp_seek*() {.ssh2.}
+proc sftp_mkdir_ex*(s: Sftp, path: cstring, pathLen: uint, mode: uint64): int {.ssh2.}
 
-proc sftp_seek64*() {.ssh2.}
+proc sftp_mkdir*(s: Sftp, path: cstring, mode: uint64): int {.inline.} =
+  s.sftp_mkdir_ex(path, path.len.uint, mode)
 
-proc sftp_shutdown*() {.ssh2.}
+proc sftp_open_ex*(s: Sftp, filename: cstring, filenameLen: uint, flags: uint64, mode: int64, openType: int): SftpHandle {.ssh2.}
 
-proc sftp_stat_ex*() {.ssh2.}
+proc sftp_open*(s: Sftp, filename: cstring, flags: uint64, mode: uint64): SftpHandle {.inline.} =
+  s.sftp_open_ex(filename, filename.len.uint, 0, 0, LIBSSH2_SFTP_OPENFILE)
 
-proc sftp_statvfs*() {.ssh2.}
+proc sftp_opendir*(s: Sftp, filename: cstring, flags: uint64, mode: uint64): SftpHandle {.inline.} =
+  s.sftp_open_ex(filename, filename.len.uint, 0, 0, LIBSSH2_SFTP_OPENDIR)
 
-proc sftp_symlink_ex*() {.ssh2.}
+proc sftp_read*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int): int {.ssh2.}
 
-proc sftp_tell*() {.ssh2.}
+proc sftp_readdir_ex*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int, longEntry: ptr cstring, longEntryMaxLen: int, attrs: ptr SftpAttributes): int {.ssh2.}
 
-proc sftp_tell64*() {.ssh2.}
+proc sftp_readdir*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int, attrs: ptr SftpAttributes): int {.inline.} =
+  h.sftp_readdir_ex(buf, bufMaxLen, nil, 0, attrs)
 
-proc sftp_unlink_ex*() {.ssh2.}
+proc sftp_symlink_ex*(s: Sftp, path: cstring, pathLen: uint, target: pointer, targetLen: uint, linkType: int): int {.ssh2.}
 
-proc sftp_write*() {.ssh2.}
+proc sftp_readlink*(h: Sftp, path: cstring, target: pointer, maxLen: uint): int {.inline.} =
+  h.sftp_symlink_ex(path, path.len.uint, target, maxLen, LIBSSH2_SFTP_READLINK)
+
+proc sftp_realpath*(h: Sftp, path: cstring, target: pointer, maxLen: uint): int {.inline.} =
+  h.sftp_symlink_ex(path, path.len.uint, target, maxLen, LIBSSH2_SFTP_REALPATH)
+
+proc sftp_rename_ex*(s: Sftp, source: cstring, sourceLen: uint, dest: cstring, destLen: uint, flags: int64): int {.ssh2.}
+
+proc sftp_rename*(s: Sftp, source, dest: cstring): int {.inline.} =
+  s.sftp_rename_ex(source, source.len.uint, dest, dest.len.uint,  LIBSSH2_SFTP_RENAME_OVERWRITE or LIBSSH2_SFTP_RENAME_ATOMIC o LIBSSH2_SFTP_RENAME_NATIVE)
+
+proc sftp_rmdir_ex*(s: Sftp, path: cstring, pathLen: uint): int {.ssh2.}
+
+proc sftp_rmdir*(s: Sftp, path: cstring): int {.inline.} =
+  s.sftp_rmdir_ex(path, path.len.uint)
+
+proc sftp_seek*(h: SftpHandle, offset: int) {.ssh2.}
+
+proc sftp_seek64*(h: SftpHandle, offset: int64) {.ssh2.}
+
+proc sftp_rewind*(h: SftpHandle) {.inline.} =
+  h.sftp_seek64(0)
+
+proc sftp_shutdown*(s: Sftp): int {.ssh2.}
+
+proc sftp_stat_ex*(h: SftpHandle, attrs: pointer, setstat: int): int {.ssh2.}
+
+proc sftp_stat(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
+  sftp_stat_ex(h, attrs, 0)
+
+proc sftp_setstat(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
+  sftp_stat_ex(h, attrs, 1)
+
+proc sftp_statvfs*(s: Sftp, path: cstring, pathLen: int, st: ptr SftpAttributes) {.ssh2.}
+
+proc sftp_fstatvfs*(h: SftpHandle, st: ptr SftpAttributes) {.ssh2.}
+
+proc sftp_symlink*(s: Sftp, orig, linkPath: cstring): int {.inline.} =
+  sftp_symlink_ex(s, orig, orig.len.uint, linkPath, linkPath.len.uint, LIBSSH2_SFTP_SYMLINK)
+
+proc sftp_tell*(h: SftpHandle): int {.ssh2.}
+
+proc sftp_tell64*(h: SftpHandle): int64 {.ssh2.}
+
+proc sftp_unlink_ex*(s: Sftp, filename: cstring, filenameLen: uint): int {.ssh2.}
+
+proc sftp_unlink*(s: Sftp, filename: cstring): int {.inline.} =
+  sftp_unlink_ex(s, filename, filename.len.uint)
+
+proc sftp_write*(h: SftpHandle, buf: pointer, count: int): int {.ssh2.}
 
 proc trace*() {.ssh2.}
 
