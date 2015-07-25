@@ -1,3 +1,5 @@
+import posix
+import times
 import rawsockets
 
 when defined(windows):
@@ -272,9 +274,14 @@ proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): int {.i
 
 proc publickey_shutdown*(p: PublicKey): int {.ssh2.}
 
-proc scp_recv*() {.ssh2.}
+proc scp_recv*(s: Session, path: cstring, sb: TStat) {.ssh2.}
 
-proc scp_send_ex*() {.ssh2.}
+proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int64): Channel {.ssh2.}
+
+proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
+  s.scp_send_ex(path, mode, size, 0, 0)
+
+proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: Time): Channel {.ssh2.}
 
 proc session_abstract*() {.ssh2.}
 
