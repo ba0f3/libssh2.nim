@@ -36,21 +36,21 @@ type
   SftpAttributes* = ptr SSH2Struct
   SftpStatVFS* = ptr SSH2Struct
 
-  KnownHost* {.final, pure.} = object
+  knownhost_st* {.final, pure.} = ref object
     magic*: cint
     node*: ptr int
-    name: cstring
-    key: cstring
-    typemask: cint
+    name*: cstring
+    key*: cstring
+    typemask*: cint
 
-  publickey_attribute_st* {.final, pure.} = object
+  publickey_attribute_st* {.final, pure.} = ref object
     name*: cstring
     nameLen*: culong
     value*: cstring
     valueLen*: culong
     mandatory*: cchar
 
-  publickey_list_st* {.final, pure.} = object
+  publickey_list_st* {.final, pure.} = ref object
     packet*: cchar
     name*: cstring
     nameLen*: culong
@@ -455,19 +455,19 @@ proc keepalive_config*(s: Session, waitReply: int, interval: uint) {.ssh2.}
 
 proc keepalive_send*(s: Session, secondsToNext: int): cint {.ssh2.}
 
-proc knownhost_add*(h: KnownHosts, host, salt, key: cstring, keyLen: int, typeMask: int, kh: KnownHost): cint {.ssh2.}
+proc knownhost_add*(h: KnownHosts, host, salt, key: cstring, keyLen: int, typeMask: int, kh: knownhost_st): cint {.ssh2, deprecated.}
 
-proc knownhost_addc*(h: KnownHosts, host, salt, key: cstring, keyLen: int, comment: cstring, commentLen, typemask: int, kh: KnownHost): cint {.ssh2.}
+proc knownhost_addc*(h: KnownHosts, host, salt, key: cstring, keyLen: int, comment: cstring, commentLen, typemask: int, kh: ptr knownhost_st): cint {.ssh2.}
 
-proc knownhost_check*(h: KnownHosts, host, key: cstring, keyLen, typeMask, int, kh: KnownHost): cint {.ssh2.}
+proc knownhost_check*(h: KnownHosts, host, key: cstring, keyLen, typeMask, int, kh: knownhost_st): cint {.ssh2.}
 
-proc knownhost_checkp*(h: KnownHosts, host: cstring, port: int, key: cstring, keyLen, typeMask: int, kh: var KnownHost): cint {.ssh2.}
+proc knownhost_checkp*(h: KnownHosts, host: cstring, port: int, key: cstring, keyLen, typeMask: int, kh: ptr knownhost_st): cint {.ssh2.}
 
-proc knownhost_del*(h: KnownHosts, kh: KnownHost): cint {.ssh2.}
+proc knownhost_del*(h: KnownHosts, kh: knownhost_st): cint {.ssh2.}
 
 proc knownhost_free*(h: KnownHosts) {.ssh2.}
 
-proc knownhost_get*(h: KnownHosts, store: var KnownHost, prev: KnownHost) {.ssh2.}
+proc knownhost_get*(h: KnownHosts, store: ptr knownhost_st, prev: knownhost_st) {.ssh2.}
 
 proc knownhost_init*(s: Session): KnownHosts {.ssh2.}
 
@@ -477,7 +477,7 @@ proc knownhost_readline*(h: KnownHosts, line: cstring, lineLen, typ: int): cint 
 
 proc knownhost_writefile*(h: KnownHosts, filename: cstring, typ: int) {.ssh2.}
 
-proc knownhost_writeline*(h: KnownHosts, known: KnownHost, buf: cstring, bufLen, outLen, typ: int) {.ssh2.}
+proc knownhost_writeline*(h: KnownHosts, known: knownhost_st, buf: cstring, bufLen, outLen, typ: int) {.ssh2.}
 
 proc poll*(fds: PollFd, nfds: uint, timeout: int64): cint {.ssh2.}
 

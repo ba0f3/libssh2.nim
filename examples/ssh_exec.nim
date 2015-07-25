@@ -1,9 +1,7 @@
 import os
 import net
-import hex
-import strutils
-import times
 import posix
+import base64
 
 import ../libssh2
 
@@ -86,9 +84,11 @@ var knownHosts = session.knownHostInit()
 if knownHosts.isNil:
   session.shutdown()
 
-discard knownHosts.knownHostReadfile("known_hosts", LIBSSH2_KNOWNHOST_FILE_OPENSSH)
-
-knownHosts.knownHostWritefile("dumpfile", LIBSSH2_KNOWNHOST_FILE_OPENSSH)
+rc = knownHosts.knownHostReadfile("dummy_known_hosts", LIBSSH2_KNOWNHOST_FILE_OPENSSH)
+if rc < 0:
+  echo "Read knownhost error: ", rc
+else:
+  echo "Parsed ", rc, " knownhosts"
 
 var length: int
 var typ: int
@@ -98,9 +98,18 @@ if fingerprint.isNil:
   echo "Unable to fetch hostkey"
   session.shutdown()
 
-var host: KnownHost
-let check = knownHosts.knownHostCheckP(hostname, 22, fingerprint, length, LIBSSH2_KNOWNHOST_TYPE_PLAIN or LIBSSH2_KNOWNHOST_KEYENC_RAW, host)
+var host: knownhost_st
+let check = knownHosts.knownHostCheckP(hostname, 22, fingerprint, length, LIBSSH2_KNOWNHOST_TYPE_PLAIN or LIBSSH2_KNOWNHOST_KEYENC_RAW or LIBSSH2_KNOWNHOST_KEY_SSHRSA, addr host)
+echo "Host check: ", check, " key: ", if check <= LIBSSH2_KNOWNHOST_CHECK_MISMATCH: host.key else: "<none>"
 
+
+rc = knownHosts.knownHostAddC(hostname, nil, fingerprint, length, nil, 0, LIBSSH2_KNOWNHOST_TYPE_PLAIN or LIBSSH2_KNOWNHOST_KEYENC_RAW or LIBSSH2_KNOWNHOST_KEY_SSHRSA, nil)
+if rc == 0:
+  echo "Add knownhost succeeded!"
+else:
+  echo "Failed to add knownhost: ", rc
+
+knownHosts.knownHostWritefile("dummy_known_hosts", LIBSSH2_KNOWNHOST_FILE_OPENSSH)
 knownHosts.knownHostFree()
 
 if password.len > 0:
