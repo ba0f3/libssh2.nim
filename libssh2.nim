@@ -67,6 +67,23 @@ const
   LIBSSH2_TERM_WIDTH_PX* = 0
   LIBSSH2_TERM_HEIGHT_PX* = 0
 
+  # Disconnect Codes (defined by SSH protocol)
+  SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT* = 1
+  SSH_DISCONNECT_PROTOCOL_ERROR* = 2
+  SSH_DISCONNECT_KEY_EXCHANGE_FAILED* = 3
+  SSH_DISCONNECT_RESERVED* = 4
+  SSH_DISCONNECT_MAC_ERROR* = 5
+  SSH_DISCONNECT_COMPRESSION_ERROR* = 6
+  SSH_DISCONNECT_SERVICE_NOT_AVAILABLE* = 7
+  SSH_DISCONNECT_PROTOCOL_VERSION_NOT_SUPPORTED* = 8
+  SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE* = 9
+  SSH_DISCONNECT_CONNECTION_LOST* = 10
+  SSH_DISCONNECT_BY_APPLICATION* = 11
+  SSH_DISCONNECT_TOO_MANY_CONNECTIONS* = 12
+  SSH_DISCONNECT_AUTH_CANCELLED_BY_USER* = 13
+  SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE* = 14
+  SSH_DISCONNECT_ILLEGAL_USER_NAME* = 15
+
 {.pragma: ssh2,
   cdecl,
   dynlib: libname,
@@ -285,48 +302,51 @@ proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atim
 
 proc session_abstract*(s: Session): ptr Session {.ssh2.}
 
-proc session_banner_get*() {.ssh2.}
+proc session_banner_get*(s: Session): cstring {.ssh2.}
 
-proc session_banner_set*() {.ssh2.}
+proc session_banner_set*(s: Session, banner: cstring): int {.ssh2.}
 
-proc session_block_directions*() {.ssh2.}
+proc session_block_directions*(s: Session): int {.ssh2.}
 
-proc session_callback_set*() {.ssh2.}
+proc session_callback_set*(s: Session, cbtype: int, f: ptr) {.ssh2.}
 
-proc session_disconnect_ex*() {.ssh2.}
+proc session_disconnect_ex*(s: Session, reason: int, description, lang: cstring): int {.ssh2.}
 
-proc session_flag*() {.ssh2.}
+proc session_disconnect*(s: Session, description: cstring): int {.inline.} =
+  s.session_disconnect_ex(SSH_DISCONNECT_BY_APPLICATION, description, "")
 
-proc session_free*() {.ssh2.}
+proc session_flag*(s: Session, flag, value: int): int {.ssh2.}
 
-proc session_get_blocking*() {.ssh2.}
+proc session_free*(s: Session): int {.ssh2.}
 
-proc session_get_timeout*() {.ssh2.}
+proc session_get_blocking*(s: Session): int {.ssh2.}
+
+proc session_get_timeout*(s: Session): int64 {.ssh2.}
 
 proc session_handshake*(s: Session, fd: SocketHandle): int {.ssh2.}
 
-proc session_hostkey*() {.ssh2.}
+proc session_hostkey*(s: Session, length, typ: int): cstring {.ssh2.}
 
 proc session_init_ex*(a, b, c, d: int): Session {.ssh2.}
 
 proc session_init*(): Session =
   session_init_ex(0, 0, 0, 0)
 
-proc session_last_errno*() {.ssh2.}
+proc session_last_errno*(s: Session): int {.ssh2.}
 
-proc session_last_error*() {.ssh2.}
+proc session_last_error*(s: Session, errormsg: var cstring, errmsgLen, wantBuf: int): int {.ssh2.}
 
-proc session_method_pref*() {.ssh2.}
+proc session_method_pref*(s: Session, methodType: int, prefs: cstring): int {.ssh2.}
 
-proc session_methods*() {.ssh2.}
+proc session_methods*(s: Session, methodType: int): cstring {.ssh2.}
 
-proc session_set_blocking*() {.ssh2.}
+proc session_set_blocking*(s: Session, blocking: int) {.ssh2.}
 
-proc session_set_timeout*() {.ssh2.}
+proc session_set_timeout*(s: Session, timeout: uint) {.ssh2.}
 
-proc session_startup*() {.ssh2.}
+proc session_startup*(s: Session, socket: int): int {.ssh2.}
 
-proc session_supported_algs*() {.ssh2.}
+proc session_supported_algs*(s: Session, methodType: int, algs: var cstring) {.ssh2.}
 
 proc sftp_close_handle*() {.ssh2.}
 
