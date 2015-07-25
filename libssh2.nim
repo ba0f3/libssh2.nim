@@ -20,6 +20,7 @@ elif defined(unix):
 
 
 type
+  Function* = proc () {.cdecl.}
   SSH2Struct {.final, pure.} = object
   Agent* = ptr SSH2Struct
   AgentPublicKey* = ptr SSH2Struct
@@ -56,6 +57,8 @@ type
     blob*: cstring
     blobLen*: culong
     attrs*: publickey_attribute_st
+
+  passwd_changereq_func* = proc(session: Session, newpw: ptr cstring, newpwLen: int, abstract: pointer) {.cdecl.}
 
 
 const
@@ -569,7 +572,8 @@ proc sftp_fsetstat*(h: SftpHandle, attrs: SftpAttributes): int {.inline.} =
 
 proc sftp_fstatvfs*(h: SftpHandle, path: cstring, pathLen: int, st: SftpStatVFS) {.ssh2.}
 
-proc sftp_fsync*(h: SftpHandle): int {.ssh2.}
+# TODO: could not import: libssh2_sftp_fsync
+#proc sftp_fsync*(h: SftpHandle): int {.ssh2.}
 
 proc sftp_get_channel*(s: Sftp): Channel {.ssh2.}
 
@@ -577,7 +581,8 @@ proc sftp_init*(s: Session): Sftp {.ssh2.}
 
 proc sftp_last_error*(s: Sftp): uint64 {.ssh2.}
 
-proc sftp_lstat(s: Sftp, path: cstring, attrs: SftpAttributes): int {.ssh2.}
+# TODO: could not import
+#proc sftp_lstat*(s: Sftp, path: cstring, attrs: SftpAttributes): int {.ssh2.}
 
 proc sftp_mkdir_ex*(s: Sftp, path: cstring, pathLen: uint, mode: uint64): int {.ssh2.}
 
@@ -628,10 +633,10 @@ proc sftp_shutdown*(s: Sftp): int {.ssh2.}
 
 proc sftp_stat_ex*(h: SftpHandle, attrs: pointer, setstat: int): int {.ssh2.}
 
-proc sftp_stat(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
+proc sftp_stat*(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
   sftp_stat_ex(h, attrs, 0)
 
-proc sftp_setstat(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
+proc sftp_setstat*(h: SftpHandle, path: cstring, attrs: pointer): int {.inline.} =
   sftp_stat_ex(h, attrs, 1)
 
 proc sftp_statvfs*(s: Sftp, path: cstring, pathLen: int, st: ptr SftpAttributes) {.ssh2.}
@@ -663,26 +668,27 @@ proc userauth_hostbased_fromfile_ex*(s: Session, uname: cstring, unameLen: uint,
 proc userauth_hostbased_fromfile*(s: Session, uname: cstring, unameLen: uint, pk, pv, pp, hostname: cstring): int {.inline.} =
   userauth_hostbased_fromfile_ex(s, uname, uname.len.uint, pk, pv, pp, hostname, hostname.len.uint, uname, uname.len.uint)
 
-proc userauth_keyboard_interactive_ex*(s: Session, uname: cstring, unameLen: uint, cb: proc): int {.ssh2.}
+proc userauth_keyboard_interactive_ex*(s: Session, uname: cstring, unameLen: uint, cb: Function): int {.ssh2.}
 
-proc userauth_keyboard_interactive_ex*(s: Session, uname: cstring, cb: proc): int {.inline.} =
+proc userauth_keyboard_interactive*(s: Session, uname: cstring, cb: Function): int {.inline.} =
   userauth_keyboard_interactive_ex(s, uname, uname.len.uint, cb)
 
 proc userauth_list*(s: Session, username: cstring, usernameLen: int): cstring {.ssh2.}
 
-proc userauth_password_ex*(s: Session, uname: cstring, unameLen: uint, password: cstring, passwordLen: uint, cb: proc): int {.ssh2.}
+proc userauth_password_ex*(s: Session, uname: cstring, unameLen: uint, password: cstring, passwordLen: uint, cb: passwd_changereq_func): int {.ssh2.}
 
-proc userauth_password*(s: Session, uname: cstring, password: cstring, cb: proc): int {.inline.} =
+proc userauth_password*(s: Session, uname: cstring, password: cstring, cb: passwd_changereq_func): int {.inline.} =
   userauth_password_ex(s, uname, uname.len.uint, password, password.len.uint, cb)
 
-proc userauth_publickey*(s: Session, user: cstring, pkdata: cstring, pubkeydataLen: int, cb: proc) {.ssh2.}
+proc userauth_publickey*(s: Session, user: cstring, pkdata: cstring, pubkeydataLen: int, cb: Function) {.ssh2.}
 
-proc userauth_publickey_fromfile_ex*(s: Session, uname: ptr, unameLen: uint, pk, pv, pp: cstring): int {.ssh2.}
+proc userauth_publickey_fromfile_ex*(s: Session, uname: cstring, unameLen: uint, pk, pv, pp: cstring): int {.ssh2.}
 
-proc userauth_publickey_fromfile*(s: Session, uname: ptr cstring, pk, pv, pp: cstring): int {.inline.} =
-  userauth_publickey_fromfile_ex(s, uname, uname[].len.uint, pk, pv, pp)
+proc userauth_publickey_fromfile*(s: Session, uname: cstring, pk, pv, pp: cstring): int {.inline.} =
+  userauth_publickey_fromfile_ex(s, uname, uname.len.uint, pk, pv, pp)
 
-proc userauth_publickey_frommemory*(s: Session, uname: cstring, unameLen: int, pk: cstring, pkLen: int, pv: cstring, pvLen: int, pp: cstring, ppLen: int): int {.ssh2.}
+when defined(ssl):
+  proc userauth_publickey_frommemory*(s: Session, uname: cstring, unameLen: int, pk: cstring, pkLen: int, pv: cstring, pvLen: int, pp: cstring, ppLen: int): int {.ssh2.}
 
 proc version*(version: int): cstring {.ssh2.}
 
