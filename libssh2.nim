@@ -17,6 +17,8 @@ type
   Channel* = ptr SSH2Struct
   Listener* = ptr SSH2Struct
   KnownHosts* = ptr SSH2Struct
+  PollFd* = ptr SSH2Struct
+  PublicKey* = ptr SSH2Struct
 
   knownhost_st* {.final, pure.} = object
     magic*: cint
@@ -24,6 +26,21 @@ type
     name: cstring
     key: cstring
     typemask: cint
+
+  publickey_attribute_st* {.final, pure.} = object
+    name*: cstring
+    nameLen*: culong
+    value*: cstring
+    valueLen*: culong
+    mandatory*: cchar
+
+  publickey_list_st* {.final, pure.} = object
+    packet*: cchar
+    name*: cstring
+    nameLen*: culong
+    blob*: cstring
+    blobLen*: culong
+    attrs*: publickey_attribute_st
 
 
 const
@@ -33,20 +50,20 @@ const
   SSH_EXTENDED_DATA_STDERR* = 1
 
   # Channel API
-  LIBSSH2_CHANNEL_WINDOW_DEFAULT = (2*1024*1024)
-  LIBSSH2_CHANNEL_PACKET_DEFAULT = 32768
-  LIBSSH2_CHANNEL_MINADJUST = 1024
+  LIBSSH2_CHANNEL_WINDOW_DEFAULT* = (2*1024*1024)
+  LIBSSH2_CHANNEL_PACKET_DEFAULT* = 32768
+  LIBSSH2_CHANNEL_MINADJUST* = 1024
 
   # Extended Data Handling
-  LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL = 0
-  LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE = 1
-  LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE = 2
+  LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL* = 0
+  LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE* = 1
+  LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE* = 2
 
   # Defaults for pty requests
-  LIBSSH2_TERM_WIDTH = 80
-  LIBSSH2_TERM_HEIGHT = 24
-  LIBSSH2_TERM_WIDTH_PX = 0
-  LIBSSH2_TERM_HEIGHT_PX = 0
+  LIBSSH2_TERM_WIDTH* = 80
+  LIBSSH2_TERM_HEIGHT* = 24
+  LIBSSH2_TERM_WIDTH_PX* = 0
+  LIBSSH2_TERM_HEIGHT_PX* = 0
 
 {.pragma: ssh2,
   cdecl,
@@ -88,7 +105,7 @@ proc channel_flush_ex*(c: Channel, streamId: int): int {.ssh2.}
 proc channel_flush*(c: Channel): int {.inline.} =
   c.channel_flush_ex(0)
 
-proc channel_flush_stderr(c: Channel): int {.inline.} =
+proc channel_flush_stderr*(c: Channel): int {.inline.} =
   c.channel_flush_ex(SSH_EXTENDED_DATA_STDERR)
 
 proc channel_forward_accept*(listener: Listener): Channel {.ssh2.}
@@ -129,7 +146,7 @@ proc channel_read_ex*(c: Channel, streamId: int, buf: var cstring, bufLen: int):
 proc channel_read*(c: Channel, buf: var cstring, bufLen: int): int {.inline.} =
   c.channel_read_ex(0, buf, bufLen)
 
-proc channel_read_stderr(c: Channel, buf: var cstring, bufLen: int): int {.inline.} =
+proc channel_read_stderr*(c: Channel, buf: var cstring, bufLen: int): int {.inline.} =
   c.channel_read_ex(SSH_EXTENDED_DATA_STDERR, buf, bufLen)
 
 proc channel_receive_window_adjust2*(c: Channel, adjustment: uint64, force: char, window: uint): int {.ssh2.}
@@ -138,7 +155,7 @@ proc channel_receive_window_adjust*(c: Channel, adjustment: uint64, force: char)
 
 proc channel_request_pty_ex*(s: Session, term: cstring, termLen: uint, modes: cstring, modeLen: uint, width, height, widthPx, heightPx: int): int {.ssh2.}
 
-proc channel_request_pty(s: Session, term: cstring): int {.inline.} =
+proc channel_request_pty*(s: Session, term: cstring): int {.inline.} =
   s.channel_request_pty_ex(term, term.len.uint, nil, 0, LIBSSH2_TERM_WIDTH, LIBSSH2_TERM_HEIGHT, LIBSSH2_TERM_WIDTH_PX, LIBSSH2_TERM_HEIGHT_PX)
 
 proc channel_request_pty_size_ex*(c: Channel, width, height, widthPx, heightPx: int): int {.ssh2.}
@@ -233,21 +250,27 @@ proc knownhost_writefile*(h: KnownHosts, filename: cstring, typ: int) {.ssh2.}
 
 proc knownhost_writeline*(h: KnownHosts, known: knownhost_st, buf: cstring, bufLen, outLen, typ: int) {.ssh2.}
 
-proc poll*() {.ssh2.}
+proc poll*(fds: PollFd, nfds: uint, timeout: int64): int {.ssh2.}
 
-proc poll_channel_read*() {.ssh2.}
+proc poll_channel_read*(c: Channel, extended: int): int {.ssh2.}
 
-proc publickey_add_ex*() {.ssh2.}
+proc publickey_add_ex*(p: PublicKey, name: cstring, nameLen: int, blob: cstring, blobLen: int, overwrite: int, numAttrs: uint64, attrs: openArray[publickey_attribute_st]): int {.ssh2.}
 
-proc publickey_init*() {.ssh2.}
+proc publickey_add*(p: PublicKey, name: cstring, blob: cstring, blobLen: int, overwrite: int, numAttrs: uint64, attrs: openArray[publickey_attribute_st]): int {.inline.} =
+  p.publickey_add_ex(name, name.len, blob, blobLen, overwrite, numAttrs, attrs)
 
-proc publickey_list_fetch*() {.ssh2.}
+proc publickey_init*(s: Session): PublicKey {.ssh2.}
 
-proc publickey_list_free*() {.ssh2.}
+proc publickey_list_fetch*(p: PublicKey, numKeys: uint64, pkeyList: var publickey_list_st): int {.ssh2.}
 
-proc publickey_remove_ex*() {.ssh2.}
+proc publickey_list_free*(p: PublicKey, pkeyList: publickey_list_st) {.ssh2.}
 
-proc publickey_shutdown*() {.ssh2.}
+proc publickey_remove_ex*(p: PublicKey, name: cstring, nameLen: int, blob: cstring, blobLen: int): int {.ssh2.}
+
+proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): int {.inline.} =
+  p.publickey_remove_ex(name, name.len, blob, blobLen)
+
+proc publickey_shutdown*(p: PublicKey): int {.ssh2.}
 
 proc scp_recv*() {.ssh2.}
 
