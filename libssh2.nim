@@ -518,7 +518,7 @@ proc session_banner_set*(s: Session, banner: cstring): cint {.ssh2.}
 
 proc session_block_directions*(s: Session): cint {.ssh2.}
 
-proc session_callback_set*(s: Session, cbtype: int, f: ptr) {.ssh2.}
+proc session_callback_set*(s: Session, cbtype: int, f: pointer) {.ssh2.}
 
 proc session_disconnect_ex*(s: Session, reason: int, description, lang: cstring): cint {.ssh2.}
 
