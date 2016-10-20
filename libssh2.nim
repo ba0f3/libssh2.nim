@@ -510,7 +510,7 @@ proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
 
 proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: Time): Channel {.ssh2.}
 
-proc session_abstract*(s: Session): ptr Session {.ssh2.}
+proc session_abstract*(s: Session): ptr pointer {.ssh2.}
 
 proc session_banner_get*(s: Session): cstring {.ssh2.}
 
@@ -518,7 +518,7 @@ proc session_banner_set*(s: Session, banner: cstring): cint {.ssh2.}
 
 proc session_block_directions*(s: Session): cint {.ssh2.}
 
-proc session_callback_set*(s: Session, cbtype: int, f: ptr) {.ssh2.}
+proc session_callback_set*(s: Session, cbtype: int, f: pointer) {.ssh2.}
 
 proc session_disconnect_ex*(s: Session, reason: int, description, lang: cstring): cint {.ssh2.}
 
