@@ -10,7 +10,7 @@ elif defined(macosx):
     libname = "libssh2.1.dylib"
 elif defined(unix):
   const
-    libname = "libssh2.so"
+    libname = "libssh2.so.1"
 
 {.pragma: ssh2,
   cdecl,
