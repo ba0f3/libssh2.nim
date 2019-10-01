@@ -1,10 +1,10 @@
-import os
-import net
-import hex
-import strutils
+import os, net, strutils
 
 import ../libssh2
 
+proc encode(s: string): string =
+  for c in s:
+    result.add(c.uint8.toHex())
 
 var
   username = "root"

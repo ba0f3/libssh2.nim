@@ -1,6 +1,6 @@
 import posix
 import times
-import rawsockets
+import nativesockets
 
 when defined(windows):
   const
@@ -508,7 +508,7 @@ proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int6
 proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
   scp_send_ex(s, path, mode, size, 0, 0)
 
-proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: Time): Channel {.ssh2.}
+proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: times.Time): Channel {.ssh2.}
 
 proc session_abstract*(s: Session): ptr pointer {.ssh2.}
 

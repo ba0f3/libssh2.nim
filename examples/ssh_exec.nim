@@ -49,7 +49,7 @@ proc waitsocket(socket_fd: SocketHandle, s: Session): int =
   var readfd: TFdSet
   var dir: int
 
-  timeout.tv_sec = 10
+  timeout.tv_sec = 10.Time
   timeout.tv_usec = 0
 
   FD_ZERO(fd)
