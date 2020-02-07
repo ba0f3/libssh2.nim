@@ -23,7 +23,12 @@ type
   Function* = proc () {.cdecl.}
   SSH2Struct {.final, pure.} = object
   Agent* = ptr SSH2Struct
-  AgentPublicKey* = ptr SSH2Struct
+  AgentPublicKey* {.final, pure.} = ptr object
+    magic*: uint32
+    node*: pointer
+    blob*: cstring
+    blob_len*: csize
+    comment*: cstring
   Session* = ptr SSH2Struct
   Channel* = ptr SSH2Struct
   Listener* = ptr SSH2Struct
@@ -306,7 +311,7 @@ proc agent_disconnect*(a: Agent): cint {.ssh2.}
 
 proc agent_free*(a: Agent) {.ssh2.}
 
-proc agent_get_identity*(a: Agent, store: ptr AgentPublicKey, prev: AgentPublicKey) {.ssh2.}
+proc agent_get_identity*(a: Agent, store: ptr AgentPublicKey, prev: AgentPublicKey): cint {.ssh2.}
 
 proc agent_init*(s: Session): Agent {.ssh2.}
 
@@ -375,7 +380,7 @@ proc channel_read_ex*(c: Channel, streamId: int, buf: pointer, bufLen: int): cin
 proc channel_read*(c: Channel, buf: pointer, bufLen: int): cint {.inline.} =
   channel_read_ex(c, 0, buf, bufLen)
 
-proc channel_read_stderr*(c: Channel, buf: var cstring, bufLen: int): cint {.inline.} =
+proc channel_read_stderr*(c: Channel, buf: pointer, bufLen: int): cint {.inline.} =
   channel_read_ex(c, SSH_EXTENDED_DATA_STDERR, buf, bufLen)
 
 proc channel_receive_window_adjust2*(c: Channel, adjustment: uint64, force: char, window: uint): cint {.ssh2.}
@@ -544,7 +549,7 @@ proc session_init*(): Session =
 
 proc session_last_errno*(s: Session): cint {.ssh2.}
 
-proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen, wantBuf: int): cint {.ssh2.}
+proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLene, wantBuf: int): cint {.ssh2.}
 
 proc session_method_pref*(s: Session, methodType: int, prefs: cstring): cint {.ssh2.}
 
