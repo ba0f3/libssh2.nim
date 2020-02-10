@@ -33,9 +33,16 @@ type
   Channel* = ptr SSH2Struct
   Listener* = ptr SSH2Struct
   KnownHosts* = ptr SSH2Struct
-  PollFd* = ptr SSH2Struct
+  PollFdUnion* {.union.} = object
+    socket*: SocketHandle
+    channel*: ptr Channel
+    listener*: ptr Listener
+  PollFd* = ptr object
+    kind*: uint8
+    fd*: PollFdUnion
+    events*: culong
+    revents*: culong
   PublicKey* = ptr SSH2Struct
-
   Sftp* = ptr SSH2Struct
   SftpHandle* = ptr SSH2Struct
   SftpAttributes* = ptr SSH2Struct
@@ -506,7 +513,7 @@ proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): cint {.
 
 proc publickey_shutdown*(p: PublicKey): cint {.ssh2.}
 
-proc scp_recv*(s: Session, path: cstring, sb: Stat) {.ssh2.}
+proc scp_recv*(s: Session, path: cstring, sb: ptr Stat): Channel {.ssh2.}
 
 proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int64): Channel {.ssh2.}
 
@@ -549,7 +556,7 @@ proc session_init*(): Session =
 
 proc session_last_errno*(s: Session): cint {.ssh2.}
 
-proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLene, wantBuf: int): cint {.ssh2.}
+proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen, wantBuf: int): cint {.ssh2.}
 
 proc session_method_pref*(s: Session, methodType: int, prefs: cstring): cint {.ssh2.}
 
