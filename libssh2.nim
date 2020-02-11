@@ -21,32 +21,31 @@ elif defined(unix):
 
 type
   Function* = proc () {.cdecl.}
-  SSH2Struct {.final, pure.} = object
-  Agent* = ptr SSH2Struct
+  Agent*  {.final, pure.} = ptr object
   AgentPublicKey* {.final, pure.} = ptr object
     magic*: uint32
     node*: pointer
     blob*: cstring
     blob_len*: csize
     comment*: cstring
-  Session* = ptr SSH2Struct
-  Channel* = ptr SSH2Struct
-  Listener* = ptr SSH2Struct
-  KnownHosts* = ptr SSH2Struct
+  Session* {.final, pure.} = ptr object
+  Channel* {.final, pure.} = ptr object
+  Listener* {.final, pure.} = ptr object
+  KnownHosts* {.final, pure.} = ptr object
   PollFdUnion* {.union.} = object
     socket*: SocketHandle
     channel*: ptr Channel
     listener*: ptr Listener
-  PollFd* = ptr object
+  PollFd* {.final, pure.} = ptr object
     kind*: uint8
     fd*: PollFdUnion
     events*: culong
     revents*: culong
-  PublicKey* = ptr SSH2Struct
-  Sftp* = ptr SSH2Struct
-  SftpHandle* = ptr SSH2Struct
-  SftpAttributes* = ptr SSH2Struct
-  SftpStatVFS* = ptr SSH2Struct
+  PublicKey* {.final, pure.} = ptr object
+  Sftp* {.final, pure.} = ptr object
+  SftpHandle* {.final, pure.} = ptr object
+  SftpAttributes* {.final, pure.} = ptr object
+  SftpStatVFS* {.final, pure.} = ptr object
 
   knownhost_st* {.final, pure.} = ref object
     magic*: cint
