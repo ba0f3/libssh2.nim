@@ -1,5 +1,4 @@
 import posix
-import times
 import nativesockets
 
 when defined(windows):
@@ -519,7 +518,7 @@ proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int6
 proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
   scp_send_ex(s, path, mode, size, 0, 0)
 
-proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: times.Time): Channel {.ssh2.}
+proc scp_send64*(s: Session, path: cstring, mode: cint, size: uint64, mtime, atime: posix.Time): Channel {.ssh2.}
 
 proc session_abstract*(s: Session): ptr pointer {.ssh2.}
 
@@ -555,7 +554,7 @@ proc session_init*(): Session =
 
 proc session_last_errno*(s: Session): cint {.ssh2.}
 
-proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen, wantBuf: int): cint {.ssh2.}
+proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen: ptr cint, wantBuf: cint): cint {.ssh2.}
 
 proc session_method_pref*(s: Session, methodType: int, prefs: cstring): cint {.ssh2.}
 
