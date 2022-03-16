@@ -1,8 +1,8 @@
 [Package]
 name          = "libssh2"
-version       = "0.1.4"
+version       = "0.1.5"
 author        = "Huy Doan"
-description   = "Nim wraper for libssh2"
+description   = "Nim wrapper for libssh2"
 license       = "MIT"
 
 skipDirs      = "examples"

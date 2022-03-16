@@ -1,4 +1,8 @@
+when defined(windows):
+  import winlean
+
 import posix
+import times
 import nativesockets
 
 when defined(windows):
@@ -20,50 +24,25 @@ elif defined(unix):
 
 type
   Function* = proc () {.cdecl.}
-  Agent*  {.final, pure.} = ptr object
+  SSH2Struct {.final, pure.} = object
+  Agent* = ptr SSH2Struct
   AgentPublicKey* {.final, pure.} = ptr object
     magic*: uint32
     node*: pointer
     blob*: cstring
     blob_len*: csize
     comment*: cstring
-  Session* {.final, pure.} = ptr object
-  Channel* {.final, pure.} = ptr object
-  Listener* {.final, pure.} = ptr object
-  KnownHosts* {.final, pure.} = ptr object
-  PollFdUnion* {.union.} = object
-    socket*: SocketHandle
-    channel*: ptr Channel
-    listener*: ptr Listener
-  PollFd* {.final, pure.} = ptr object
-    kind*: uint8
-    fd*: PollFdUnion
-    events*: culong
-    revents*: culong
-  PublicKey* {.final, pure.} = ptr object
-  Sftp* {.final, pure.} = ptr object
-  SftpHandle* {.final, pure.} = ptr object
-  SftpAttributes* {.final, pure.} = object
-    flags*: uint32
-    filesize*: uint64
-    uid*: uint32
-    gid*: uint32
-    permissions*: uint32
-    atime*: uint32
-    mtime*: uint32
+  Session* = ptr SSH2Struct
+  Channel* = ptr SSH2Struct
+  Listener* = ptr SSH2Struct
+  KnownHosts* = ptr SSH2Struct
+  PollFd* = ptr SSH2Struct
+  PublicKey* = ptr SSH2Struct
 
-  SftpStatVFS* {.final, pure.} = ptr object
-    f_bsize*: uint64
-    f_frsize*: uint64
-    f_blocks*: uint64
-    f_bfree*: uint64
-    f_bavail*: uint64
-    f_files*: uint64
-    f_ffree*: uint64
-    f_favail*: uint64
-    f_fsid*: uint64
-    f_flag*: uint64
-    f_namemax*: uint64
+  Sftp* = ptr SSH2Struct
+  SftpHandle* = ptr SSH2Struct
+  SftpAttributes* = ptr SSH2Struct
+  SftpStatVFS* = ptr SSH2Struct
 
   knownhost_st* {.final, pure.} = ref object
     magic*: cint
@@ -87,7 +66,7 @@ type
     blobLen*: culong
     attrs*: publickey_attribute_st
 
-  passwd_changereq_func* = proc(session: Session, newpw: cstring, newpwLen: int, abstract: pointer) {.cdecl.}
+  passwd_changereq_func* = proc(session: Session, newpw: ptr cstring, newpwLen: int, abstract: pointer) {.cdecl.}
 
 
 const
@@ -530,14 +509,14 @@ proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): cint {.
 
 proc publickey_shutdown*(p: PublicKey): cint {.ssh2.}
 
-proc scp_recv2*(s: Session, path: cstring, sb: ptr Stat): Channel {.ssh2.}
+proc scp_recv*(s: Session, path: cstring, sb: Stat) {.ssh2.}
 
 proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int64): Channel {.ssh2.}
 
 proc scp_send*(s: Session, path: cstring, mode, size: int): Channel {.inline.} =
   scp_send_ex(s, path, mode, size, 0, 0)
 
-proc scp_send64*(s: Session, path: cstring, mode: cint, size: uint64, mtime, atime: posix.Time): Channel {.ssh2.}
+proc scp_send64*(s: Session, path: cstring, mode: int, size: uint64, mtime, atime: times.Time): Channel {.ssh2.}
 
 proc session_abstract*(s: Session): ptr pointer {.ssh2.}
 
@@ -562,7 +541,13 @@ proc session_get_blocking*(s: Session): cint {.ssh2.}
 
 proc session_get_timeout*(s: Session): clong {.ssh2.}
 
-proc session_handshake*(s: Session, fd: SocketHandle): cint {.ssh2.}
+when defined(linux):
+
+  proc session_handshake*(s: Session, fd: posix.SocketHandle): cint {.ssh2.}
+
+when defined(windows):
+
+  proc session_handshake*(s: Session, fd: winlean.SocketHandle): cint {.ssh2.}
 
 proc session_hostkey*(s: Session, length, typ: var int): cstring {.ssh2.}
 
@@ -573,7 +558,7 @@ proc session_init*(): Session =
 
 proc session_last_errno*(s: Session): cint {.ssh2.}
 
-proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen: ptr cint, wantBuf: cint): cint {.ssh2.}
+proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLene, wantBuf: int): cint {.ssh2.}
 
 proc session_method_pref*(s: Session, methodType: int, prefs: cstring): cint {.ssh2.}
 
@@ -617,24 +602,24 @@ proc sftp_last_error*(s: Sftp): uint64 {.ssh2.}
 # TODO: could not import
 #proc sftp_lstat*(s: Sftp, path: cstring, attrs: SftpAttributes): cint {.ssh2.}
 
-proc sftp_mkdir_ex*(s: Sftp, path: cstring, pathLen: uint, mode: int32): cint {.ssh2.}
+proc sftp_mkdir_ex*(s: Sftp, path: cstring, pathLen: uint, mode: uint64): cint {.ssh2.}
 
-proc sftp_mkdir*(s: Sftp, path: cstring, mode: int32): cint {.inline.} =
+proc sftp_mkdir*(s: Sftp, path: cstring, mode: uint64): cint {.inline.} =
   sftp_mkdir_ex(s, path, path.len.uint, mode)
 
-proc sftp_open_ex*(s: Sftp, filename: cstring, filenameLen: uint, flags: uint32, mode: int32, openType: int): SftpHandle {.ssh2.}
+proc sftp_open_ex*(s: Sftp, filename: cstring, filenameLen: uint, flags: uint64, mode: int64, openType: int): SftpHandle {.ssh2.}
 
-proc sftp_open*(s: Sftp, filename: cstring, flags: int32, mode: int32): SftpHandle {.inline.} =
-  sftp_open_ex(s, filename, filename.len.uint, flags.uint32, mode, LIBSSH2_SFTP_OPENFILE)
+proc sftp_open*(s: Sftp, filename: cstring, flags: uint64, mode: uint64): SftpHandle {.inline.} =
+  sftp_open_ex(s, filename, filename.len.uint, 0, 0, LIBSSH2_SFTP_OPENFILE)
 
-proc sftp_opendir*(s: Sftp, filename: cstring): SftpHandle {.inline.} =
+proc sftp_opendir*(s: Sftp, filename: cstring, flags: uint64, mode: uint64): SftpHandle {.inline.} =
   sftp_open_ex(s, filename, filename.len.uint, 0, 0, LIBSSH2_SFTP_OPENDIR)
 
-proc sftp_read*(h: SftpHandle, buf: cstring, bufMaxLen: int): cint {.ssh2.}
+proc sftp_read*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int): cint {.ssh2.}
 
-proc sftp_readdir_ex*(h: SftpHandle, buf: cstring, bufMaxLen: int, longEntry: cstring, longEntryMaxLen: int, attrs: ptr SftpAttributes): cint {.ssh2.}
+proc sftp_readdir_ex*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int, longEntry: ptr cstring, longEntryMaxLen: int, attrs: ptr SftpAttributes): cint {.ssh2.}
 
-proc sftp_readdir*(h: SftpHandle, buf: cstring, bufMaxLen: int, attrs: ptr SftpAttributes): cint {.inline.} =
+proc sftp_readdir*(h: SftpHandle, buf: ptr cstring, bufMaxLen: int, attrs: ptr SftpAttributes): cint {.inline.} =
   sftp_readdir_ex(h, buf, bufMaxLen, nil, 0, attrs)
 
 proc sftp_symlink_ex*(s: Sftp, path: cstring, pathLen: uint, target: pointer, targetLen: uint, linkType: int): cint {.ssh2.}
