@@ -509,7 +509,7 @@ proc publickey_remove*(p: PublicKey, name, blob: cstring, blobLen: int): cint {.
 
 proc publickey_shutdown*(p: PublicKey): cint {.ssh2.}
 
-proc scp_recv*(s: Session, path: cstring, sb: Stat) {.ssh2.}
+proc scp_recv*(s: Session, path: cstring, sb: Stat): Channel {.ssh2.}
 
 proc scp_send_ex*(s: Session, path: cstring, mode, size: int, mtime, atime: int64): Channel {.ssh2.}
 
