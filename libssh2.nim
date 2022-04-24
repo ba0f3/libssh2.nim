@@ -558,7 +558,7 @@ proc session_init*(): Session =
 
 proc session_last_errno*(s: Session): cint {.ssh2.}
 
-proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLene, wantBuf: int): cint {.ssh2.}
+proc session_last_error*(s: Session, errormsg: ptr cstring, errmsgLen: ptr cint, wantBuf: int): cint {.ssh2.}
 
 proc session_method_pref*(s: Session, methodType: int, prefs: cstring): cint {.ssh2.}
 
