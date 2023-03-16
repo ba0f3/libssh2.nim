@@ -1,5 +1,3 @@
-{.hint[name]: off.}
-
 when defined(windows):
   import winlean
 
