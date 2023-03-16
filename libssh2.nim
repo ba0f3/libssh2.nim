@@ -30,7 +30,7 @@ type
     magic*: uint32
     node*: pointer
     blob*: cstring
-    blob_len*: csize
+    blob_len*: csize_t
     comment*: cstring
   Session* = ptr SSH2Struct
   Channel* = ptr SSH2Struct
@@ -41,8 +41,27 @@ type
 
   Sftp* = ptr SSH2Struct
   SftpHandle* = ptr SSH2Struct
-  SftpAttributes* = ptr SSH2Struct
-  SftpStatVFS* = ptr SSH2Struct
+  
+  SftpAttributes* {.final, pure.} = object
+    flags*: culong
+    filesize*: uint64
+    uid*: culong
+    gid*: culong
+    permissions*: culong
+    atime*: culong
+    mtime*: culong
+  SftpStatVFS* {.final, pure.} = object
+    f_bsize*: uint64
+    f_frsize*: uint64
+    f_blocks*: uint64
+    f_bfree*: uint64
+    f_bavail*: uint64
+    f_files*: uint64
+    f_ffree*: uint64
+    f_favail*: uint64
+    f_fsid*: uint64
+    f_flag*: uint64
+    f_namemax*: uint64
 
   knownhost_st* {.final, pure.} = ref object
     magic*: cint
