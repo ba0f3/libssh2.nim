@@ -131,10 +131,10 @@ else:
   if rc != 0:
     echo  "Authentication by public key failed!"
     session.shutdown()
-var channel: Channel
+var channel: libssh2.Channel
 while true:
   channel = session.channelOpenSession()
-  if channel.isNil and session.sessionLastError(nil, 0, 0) == LIBSSH2_ERROR_EAGAIN:
+  if channel.isNil and session.sessionLastError(nil, nil, 0) == LIBSSH2_ERROR_EAGAIN:
     discard waitsocket(sock.getFd(), session)
   else:
     break
