@@ -1,6 +1,6 @@
 [Package]
 name          = "libssh2"
-version       = "0.1.7"
+version       = "0.1.8"
 author        = "Huy Doan"
 description   = "Nim wrapper for libssh2"
 license       = "MIT"

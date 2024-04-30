@@ -560,12 +560,10 @@ proc session_get_blocking*(s: Session): cint {.ssh2.}
 
 proc session_get_timeout*(s: Session): clong {.ssh2.}
 
-when defined(linux):
-
+when defined(posix):
   proc session_handshake*(s: Session, fd: posix.SocketHandle): cint {.ssh2.}
 
 when defined(windows):
-
   proc session_handshake*(s: Session, fd: winlean.SocketHandle): cint {.ssh2.}
 
 proc session_hostkey*(s: Session, length, typ: var int): cstring {.ssh2.}
