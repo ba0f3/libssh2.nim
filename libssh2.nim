@@ -39,6 +39,14 @@ type
   PollFd* = ptr SSH2Struct
   PublicKey* = ptr SSH2Struct
 
+  CryptoEngine* = enum
+    CRYPTO_ENGINE_NONE
+    CRYPTO_ENGINE_OPENSSL
+    CRYPTO_ENGINE_GCRYPT
+    CRYPTO_ENGINE_MBEDTLS
+    CRYPTO_ENGINE_WINCNG
+    CRYPTO_ENGINE_OS400QC3
+
   Sftp* = ptr SSH2Struct
   SftpHandle* = ptr SSH2Struct
 
@@ -85,10 +93,34 @@ type
     blobLen*: culong
     attrs*: publickey_attribute_st
 
-  passwd_changereq_func* = proc(session: Session, newpw: ptr cstring, newpwLen: int, abstract: pointer) {.cdecl.}
+  PASSWD_CHANGEREQ_FUNC* = proc(session: Session, newpw: ptr cstring, newpwLen: int, abstract: pointer) {.cdecl.}
 
+  USERAUTH_SK_SIGN_FUNC* = proc (session: Session, sig: ptr SK_SIG_INFO, data: cstring, data_len: csize_t, abstract: pointer) {.cdecl.}
+    ## Callback function type for security key signing operations
+
+  SK_SIG_INFO* {.final, pure.} = object
+    ## Security Key signature information structure
+    flags*: uint8        ## Flags indicating signature properties
+    counter*: uint32     ## Operation counter
+    sig_r*: cstring     ## R component of the signature
+    sig_r_len*: csize_t ## Length of R component
+    sig_s*: cstring     ## S component of the signature
+    sig_s_len*: csize_t ## Length of S component
+
+  PRIVKEY_SK* {.final, pure.} = object
+    ## Security Key private key structure
+    algorithm*: cstring      ## Name of the algorithm
+    flags*: uint8            ## Key flags
+    application*: cstring    ## Application identifier
+    key_handle*: cstring     ## Handle to the key
+    key_handle_len*: csize_t ## Length of the key handle
+    reserved*: array[7, uint8] ## Reserved for future use
 
 const
+  LIBSSH2_VERSION* = "1.11.1"
+  LIBSSH2_VERSION_MAJOR* = 1
+  LIBSSH2_VERSION_MINOR* = 11
+  LIBSSH2_VERSION_PATCH* = 1
   LIBSSH2_INVALID_SOCKET* = -1
   LIBSSH2_DH_GEX_MINGROUP* = 1024
   LIBSSH2_DH_GEX_OPTGROUP* = 1536
@@ -137,11 +169,19 @@ const
   LIBSSH2_POLLFD_LISTENER_CLOSED* = 0x0080
   LIBSSH2_SESSION_BLOCK_INBOUND* = 0x0001
   LIBSSH2_SESSION_BLOCK_OUTBOUND* = 0x0002
+  LIBSSH2_SK_PRESENCE_REQUIRED* = 0x01
+  LIBSSH2_SK_VERIFICATION_REQUIRED* = 0x04
+  LIBSSH2_VERSION_NUM* = 0x010b01
   LIBSSH2_HOSTKEY_HASH_MD5* = 1
   LIBSSH2_HOSTKEY_HASH_SHA1* = 2
+  LIBSSH2_HOSTKEY_HASH_SHA256* = 3
   LIBSSH2_HOSTKEY_TYPE_UNKNOWN* = 0
   LIBSSH2_HOSTKEY_TYPE_RSA* = 1
   LIBSSH2_HOSTKEY_TYPE_DSS* = 2
+  LIBSSH2_HOSTKEY_TYPE_ECDSA_256* = 3
+  LIBSSH2_HOSTKEY_TYPE_ECDSA_384* = 4
+  LIBSSH2_HOSTKEY_TYPE_ECDSA_521* = 5
+  LIBSSH2_HOSTKEY_TYPE_ED25519* = 6
   LIBSSH2_ERROR_NONE* = 0
   LIBSSH2_ERROR_SOCKET_NONE* = -1
   LIBSSH2_ERROR_BANNER_RECV* = -2
@@ -190,6 +230,14 @@ const
   LIBSSH2_ERROR_ENCRYPT* = -44
   LIBSSH2_ERROR_BAD_SOCKET* = -45
   LIBSSH2_ERROR_KNOWN_HOSTS* = -46
+  LIBSSH2_ERROR_CHANNEL_WINDOW_FULL* = -47
+  LIBSSH2_ERROR_KEYFILE_AUTH_FAILED* = -48
+  LIBSSH2_ERROR_RANDGEN* = -49
+  LIBSSH2_ERROR_MISSING_USERAUTH_BANNER* = -50
+  LIBSSH2_ERROR_ALGO_UNSUPPORTED* = -51
+  LIBSSH2_ERROR_MAC_FAILURE* = -52
+  LIBSSH2_ERROR_HASH_INIT* = -53
+  LIBSSH2_ERROR_HASH_CALC* = -54
   LIBSSH2_ERROR_BANNER_NONE* = LIBSSH2_ERROR_BANNER_RECV
   LIBSSH2_INIT_NO_CRYPTO* = 0x0001
   LIBSSH2_CHANNEL_WINDOW_DEFAULT* = (2*1024*1024)
@@ -545,7 +593,7 @@ proc session_banner_set*(s: Session, banner: cstring): cint {.ssh2.}
 
 proc session_block_directions*(s: Session): cint {.ssh2.}
 
-proc session_callback_set*(s: Session, cbtype: int, f: pointer) {.ssh2.}
+proc session_callback_set*(s: Session, cbtype: int, f: pointer) {.ssh2, deprecated: "Use session_callback_set2 instead".}
 
 proc session_disconnect_ex*(s: Session, reason: int, description, lang: cstring): cint {.ssh2.}
 
@@ -588,6 +636,22 @@ proc session_set_timeout*(s: Session, timeout: uint) {.ssh2.}
 proc session_startup*(s: Session, socket: int): cint {.ssh2.}
 
 proc session_supported_algs*(s: Session, methodType: int, algs: var cstring) {.ssh2.}
+
+proc session_set_read_timeout*(s: Session, timeout: cint) {.ssh2.}
+  ## Set the read timeout for the session. A timeout of 0 disables timeouts.
+  ## Timeout is in milliseconds.
+
+proc session_get_read_timeout*(s: Session): cint {.ssh2.}
+  ## Get the current read timeout for the session.
+  ## Returns the timeout in milliseconds, or 0 if timeouts are disabled.
+
+proc session_callback_set2*(s: Session, cbtype: int, callback: pointer): pointer {.ssh2.}
+  ## Set or get a callback function for the specified callback type.
+  ## Returns the previous callback function or nil.
+
+proc crypto_engine*(s: Session): CryptoEngine {.ssh2.}
+  ## Get the crypto engine being used by the session.
+  ## Returns the crypto engine type.
 
 proc sftp_close_handle*(h: SftpHandle): cint {.ssh2.}
 
@@ -710,9 +774,9 @@ proc userauth_keyboard_interactive*(s: Session, uname: cstring, cb: Function): c
 
 proc userauth_list*(s: Session, username: cstring, usernameLen: int): cstring {.ssh2.}
 
-proc userauth_password_ex*(s: Session, uname: cstring, unameLen: uint, password: cstring, passwordLen: uint, cb: passwd_changereq_func): cint {.ssh2.}
+proc userauth_password_ex*(s: Session, uname: cstring, unameLen: uint, password: cstring, passwordLen: uint, cb: PASSWD_CHANGEREQ_FUNC): cint {.ssh2.}
 
-proc userauth_password*(s: Session, uname: cstring, password: cstring, cb: passwd_changereq_func): cint {.inline.} =
+proc userauth_password*(s: Session, uname: cstring, password: cstring, cb: PASSWD_CHANGEREQ_FUNC): cint {.inline.} =
   userauth_password_ex(s, uname, uname.len.uint, password, password.len.uint, cb)
 
 proc userauth_publickey*(s: Session, user: cstring, pkdata: cstring, pubkeydataLen: int, cb: Function) {.ssh2.}
@@ -722,8 +786,33 @@ proc userauth_publickey_fromfile_ex*(s: Session, uname: cstring, unameLen: uint,
 proc userauth_publickey_fromfile*(s: Session, uname: cstring, pk, pv, pp: cstring): cint {.inline.} =
   userauth_publickey_fromfile_ex(s, uname, uname.len.uint, pk, pv, pp)
 
-when defined(ssl):
-  proc userauth_publickey_frommemory*(s: Session, uname: cstring, unameLen: int, pk: cstring, pkLen: int, pv: cstring, pvLen: int, pp: cstring, ppLen: int): cint {.ssh2.}
+proc userauth_publickey_frommemory*(s: Session, uname: cstring, unameLen: int, pk: cstring, pkLen: int, pv: cstring, pvLen: int, pp: cstring, ppLen: int): cint {.ssh2.}
+
+proc userauth_publickey_sk*(s: Session, username: cstring, pubkeydata: cstring, pubkeydata_len: csize_t, sign_callback: USERAUTH_SK_SIGN_FUNC, abstract: pointer): cint {.ssh2.}
+  ## Perform public key authentication using a security key.
+  ##
+  ## Parameters:
+  ## - s: The session handle
+  ## - username: The username to authenticate as
+  ## - pubkeydata: The public key data
+  ## - pubkeydata_len: Length of the public key data
+  ## - sign_callback: Callback function for signing operations
+  ## - abstract: User-provided context passed to callback
+  ##
+  ## Returns 0 on success, negative on failure
+
+proc sign_sk*(session: Session, sig: ptr SK_SIG_INFO, data: cstring,data_len: csize_t, flags: cint): cint {.ssh2.}
+  ## Sign data using a security key.
+  ##
+  ## Parameters:
+  ## - session: The session handle
+  ## - sig: Pointer to signature information structure
+  ## - data: Data to be signed
+  ## - data_len: Length of data
+  ## - flags: Signing operation flags (LIBSSH2_SK_*)
+  ##
+  ## Returns 0 on success, negative on failure.
+  ## Use session_last_error() to get error details.
 
 proc version*(version: int): cstring {.ssh2.}
 
